@@ -13,6 +13,7 @@ This section requires you to perform feature selection through the use of the un
 # Part 3: Association Rules
 
 This section will require that you create association rules that will allow you to identify relationships between variables in the dataset. You are provided with a separate dataset that comprises groups of items that will be associated with others. Just like in the other sections, you will also be required to provide insights for your analysis.
+insightful resource = [https://www.datacamp.com/community/tutorials/market-basket-analysis-r]
 
 # Part 4: Anomaly Detection
 
@@ -23,5 +24,7 @@ You have also been requested to check whether there are any anomalies in the giv
 The dataset files for part 1, 2, 3 and 4 can be found below:
 
 Part 1 and 2: Dataset [http://bit.ly/CarreFourDataset].
+
 Part 3: Dataset [http://bit.ly/SupermarketDatasetII].
+
 Part 4: Dataset [http://bit.ly/CarreFourSalesDataset].
