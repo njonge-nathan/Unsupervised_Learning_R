@@ -18,6 +18,7 @@ insightful resource = [https://www.datacamp.com/community/tutorials/market-baske
 # Part 4: Anomaly Detection
 
 You have also been requested to check whether there are any anomalies in the given sales dataset. The objective of this task being fraud detection.
+insightful resource = [https://www.datacamp.com/community/tutorials/detect-anomalies-anomalize-r]
 
 # Dataset
 
