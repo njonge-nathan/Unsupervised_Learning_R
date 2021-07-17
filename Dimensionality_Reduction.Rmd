@@ -1,0 +1,548 @@
+---
+title: "IP_WEEK_14_DIMENSIONALITY_REDUCTION"
+author: "Nathan_Njonge"
+date: "7/17/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## PROBLEM DEFINITION
+
+You are a Data analyst at Carrefour Kenya and are currently undertaking a project that will inform the marketing department on the most relevant marketing strategies that will result in the highest no. of sales (total price including tax). Your project has been divided into four parts where you'll explore a recent marketing dataset by performing various unsupervised learning techniques and later providing recommendations based on your insights.
+
+```{r}
+# load our dataset
+dataset <- read.csv("http://bit.ly/CarreFourDataset")
+```
+
+
+```{r}
+# preview the top of our dataset
+head(dataset)
+```
+
+```{r}
+# preview the bottom of our dataset
+tail(dataset)
+```
+
+```{r}
+# view the number of columns and rows
+dim(dataset)
+```
+
+> Our dataset has 1000 rows and 16 columns.
+
+
+```{r}
+# view the datatypes of our columns
+str(dataset)
+```
+```{r}
+# check total missing values in the columns
+colSums(is.na(dataset))
+```
+> There is no missing data in our columns.
+
+```{r}
+# find any duplicated rows in our dataset
+duplicated_rows <- dataset[duplicated(dataset),]
+duplicated_rows
+```
+> There appears to be no duplicated entries in our data.
+
+# Handling outliers
+
+```{r}
+# checking for outliers on the Unit.price  column
+boxplot(dataset$Unit.price)
+boxplot.stats(dataset$Unit.price)$out
+```
+> There is no presence of outliers in the Unit price column.
+
+```{r}
+# checking for outliers on the Quantity column
+boxplot(dataset$Quantity)
+boxplot.stats(dataset$Quantity)$out
+```
+
+> There appears to be no outliers in the quantity column.
+
+
+```{r}
+# checking for outliers on the Tax column
+boxplot(dataset$Tax)
+boxplot.stats(dataset$Tax)$out
+```
+
+> The outliers in the Tax column are as a result of the products that are taxed highly.
+
+
+```{r}
+# checking for outliers on the cogs column
+boxplot(dataset$cogs)
+boxplot.stats(dataset$cogs)$out
+```
+
+> The outliers in the cogs column are as a result of the high cost of goods sold.
+
+```{r}
+# checking for outliers on the gross.margin.percentage column
+boxplot(dataset$gross.margin.percentage)
+boxplot.stats(dataset$gross.margin.percentage)$out
+```
+
+>There appears to be no outliers in the gross.margin.percentage column.
+
+
+```{r}
+# checking for outliers on the gross.income column
+boxplot(dataset$gross.income)
+boxplot.stats(dataset$gross.income)$out
+```
+
+> The outliers on the gross income column are as a result of the high gross income.
+
+
+```{r}
+# checking for outliers on the Rating column
+boxplot(dataset$Rating)
+boxplot.stats(dataset$Rating)$out
+```
+> There is no presence of outliers in the Rating Column.
+
+```{r}
+# checking for outliers on the Total column
+boxplot(dataset$Total)
+boxplot.stats(dataset$Total)$out
+```
+
+> The outliers in the total Column are as a result of the high total amount.
+
+
+# Exploratory Data Analysis
+## Univariate Analysis
+### 1.Measures of Central Tendency & Measures of Dispersion
+
+```{r}
+summary(dataset)
+```
+
+```{r}
+# mode function
+getmode <- function(v) {
+   uniqv <- unique(v)
+   uniqv[which.max(tabulate(match(v, uniqv)))]
+}
+```
+
+
+```{r}
+#  mode of numerical columns
+library(dplyr)
+dataset %>% summarize_if(is.numeric, getmode)
+```
+
+
+```{r}
+# range of numerical columns
+dataset %>% summarize_if(is.numeric, range)
+```
+
+
+```{r}
+# Quantile of numerical columns
+dataset %>% summarize_if(is.numeric, quantile)
+```
+
+
+```{r}
+# Variance of numerical columns
+dataset %>% summarize_if(is.numeric, var)
+```
+
+
+```{r}
+# Standard Deviation of numerical columns
+dataset %>% summarize_if(is.numeric, sd)
+```
+
+### Univariate Graphical
+#### BarGraph
+
+```{r}
+library(scales)
+library(ggplot2)
+plotdata <- dataset %>%
+  count(Branch) %>%
+  mutate(pct = n / sum(n),
+         pctlabel = paste0(round(pct*100), "%"))
+
+# plot the bars as percentages, 
+# in decending order with bar labels
+ggplot(plotdata, 
+       aes(x = reorder(Branch, -pct),
+           y = pct)) + 
+  geom_bar(stat = "identity", 
+           fill = "indianred3", 
+           color = "black") +
+  geom_text(aes(label = pctlabel), 
+            vjust = -0.25) +
+  scale_y_continuous(labels = percent) +
+  labs(x = "Branch", 
+       y = "Percent", 
+       title  = "Customers per Branch")
+```
+> The customers for Branch A were 1% higher compared to branch B and C.
+
+```{r}
+# Barchart of Customer Type
+plotdata <- dataset %>%
+  count(Customer.type) %>%
+  mutate(pct = n / sum(n),
+         pctlabel = paste0(round(pct*100), "%"))
+
+# plot the bars as percentages, 
+# in decending order with bar labels
+ggplot(plotdata, 
+       aes(x = reorder(Customer.type, -pct),
+           y = pct)) + 
+  geom_bar(stat = "identity", 
+           fill = "orange", 
+           color = "black") +
+  geom_text(aes(label = pctlabel), 
+            vjust = -0.25) +
+  scale_y_continuous(labels = percent) +
+  labs(x = "Customer.type", 
+       y = "Percent", 
+       title  = "Distribution of Customer Type")
+```
+> The customer type distribution was equal at 50% for the Member Customers and Normal Customers.
+
+```{r}
+# Barchart of Product Line
+plotdata <- dataset %>%
+  count(Product.line) %>%
+  mutate(pct = n / sum(n),
+         pctlabel = paste0(round(pct*100), "%"))
+
+# plot the bars as percentages, 
+# in decending order with bar labels
+ggplot(plotdata, 
+       aes(x = reorder(Product.line, -pct),
+           y = pct)) + 
+  geom_bar(stat = "identity", 
+           fill = "red", 
+           color = "black") +
+  geom_text(aes(label = pctlabel), 
+            vjust = -0.25) +
+  scale_y_continuous(labels = percent) +
+  labs(x = "Product.line", 
+       y = "Percent", 
+       title  = "Distribution of Product.line") +
+  coord_flip()
+```
+> Fashion accessories had a higher distribution at 18% while Health and Beauty had a lower distribution at 15%.
+
+```{r}
+# Barchart of Gender Distribution
+plotdata <- dataset %>%
+  count(Gender) %>%
+  mutate(pct = n / sum(n),
+         pctlabel = paste0(round(pct*100), "%"))
+
+# plot the bars as percentages, 
+# in decending order with bar labels
+ggplot(plotdata, 
+       aes(x = reorder(Gender, -pct),
+           y = pct)) + 
+  geom_bar(stat = "identity", 
+           fill = "blue", 
+           color = "black") +
+  geom_text(aes(label = pctlabel), 
+            vjust = -0.25) +
+  scale_y_continuous(labels = percent) +
+  labs(x = "Gender", 
+       y = "Percent", 
+       title  = "Distribution of Gender Type")
+```
+> From our barchart there appears to be an even distribution of Males and Females.
+
+
+```{r}
+# Barchart of Payment Distribution
+plotdata <- dataset %>%
+  count(Payment) %>%
+  mutate(pct = n / sum(n),
+         pctlabel = paste0(round(pct*100), "%"))
+
+# plot the bars as percentages, 
+# in decending order with bar labels
+ggplot(plotdata, 
+       aes(x = reorder(Payment, -pct),
+           y = pct)) + 
+  geom_bar(stat = "identity", 
+           fill = "purple", 
+           color = "black") +
+  geom_text(aes(label = pctlabel), 
+            vjust = -0.25) +
+  scale_y_continuous(labels = percent) +
+  labs(x = "Payment", 
+       y = "Percent", 
+       title  = "Distribution of Payment Type")
+```
+> From our barchart the most common payment type is Ewallet and Cash Payment type the least is Credit card.
+
+## Histogram
+```{r}
+# plot the histogram of Unit.price
+ggplot(dataset, aes(x = Unit.price)) +
+  geom_histogram(fill = "cornflowerblue", 
+                 color = "white",
+                 binwidth = 5) + 
+  labs(title="Unit price distribution",
+       x = "Unit Price")
+```
+> From our histogram we can see that the unit price of 75 had among the highest count.
+
+```{r}
+# plot the histogram of Quantity
+ggplot(dataset, aes(x = Quantity)) +
+  geom_histogram(fill = "cornflowerblue", 
+                 color = "white",
+                 binwidth = 1) + 
+  labs(title="Quantity distribution",
+       x = "Quantity")
+```
+
+> From our histogram of Quantity distribution the quantity of 10 had the highest count.
+
+```{r}
+# plot the histogram of Tax
+ggplot(dataset, aes(x = Tax)) +
+  geom_histogram(fill = "cornflowerblue", 
+                 color = "white",
+                 binwidth = 1) + 
+  labs(title="Tax distribution",
+       x = "Tax")
+```
+
+> From our histogram tax rates between 0 and 10 had the highest count.
+
+```{r}
+# plot the histogram of cogs
+ggplot(dataset, aes(x = cogs)) +
+  geom_histogram(fill = "cornflowerblue", 
+                 color = "white",
+                 binwidth = 50) + 
+  labs(title="cogs distribution",
+       x = "cogs")
+```
+> From our histogram of cogs between 0 and 250 had the highest count.
+
+```{r}
+# plot the histogram of gross.income
+ggplot(dataset, aes(x = gross.income)) +
+  geom_histogram(fill = "cornflowerblue", 
+                 color = "white",
+                 binwidth = 1) + 
+  labs(title="gross.income distribution",
+       x = "gross income")
+```
+> From our histogram of gross income it appears to be a large count from 0 to 10.
+
+```{r}
+# plot the histogram of Rating
+ggplot(dataset, aes(x = Rating)) +
+  geom_histogram(fill = "cornflowerblue", 
+                 color = "white",
+                 binwidth = 1) + 
+  labs(title="Rating distribution",
+       x = "Rating")
+```
+
+> From our histogram of Rating it appeared to have a high count between 6 and 7.
+
+```{r}
+# plot the histogram of Total
+ggplot(dataset, aes(x = Total)) +
+  geom_histogram(fill = "cornflowerblue", 
+                 color = "white",
+                 binwidth = 100) + 
+  labs(title="Total distribution",
+       x = "Total")
+```
+> Histogram of total distribution.
+
+#### Bivariate Analysis
+
+##### Grouped Bar Chart
+```{r}
+# grouped bar plot of Gender and customer type
+ggplot(dataset, 
+       aes(x = Gender, 
+           fill = Customer.type)) + 
+  geom_bar(position = position_dodge(preserve = "single")) +
+  labs(title = "Grouped bar chart of Gender and customer type")
+```
+> From our barplot the Females had more member customers compared to normal customers while for the Male they had more Normal customers compared to member customers.
+
+```{r}
+# grouped bar plot of Branch and customer type
+ggplot(dataset, 
+       aes(x = Branch, 
+           fill = Customer.type)) + 
+  geom_bar(position = position_dodge(preserve = "single")) +
+  labs(title = "Grouped bar chart of Branch and customer type")
+```
+
+> From our barplot Branch A had more normal customers compared to member customers, branch B had slighlty more normal customers compared to member customers while for branch C had more member customers compared to the normal customers.
+
+```{r}
+# grouped bar plot of Customer.type and Payment
+ggplot(dataset, 
+       aes(x = Customer.type, 
+           fill = Payment)) + 
+  geom_bar(position = position_dodge(preserve = "single")) +
+  labs(title = "Grouped bar chart of Customer.type and Payment")
+```
+> From our Barplot the member customers prefered credit card payment, followed by cash and lastly Ewallet while for the Normal Customers they prefered Ewallet, followed by cash and least prefered Credit card.
+
+```{r}
+# grouped bar plot of Product.line and Branch
+ggplot(dataset, 
+       aes(x = Product.line, 
+           fill = Branch)) + 
+  geom_bar(position = position_dodge(preserve = "single")) +
+  labs(title = "Grouped bar chart of Product.line and Branch") +
+  coord_flip()
+  
+```
+> From our barplot of product line vs Branch, for sports and travel products they were most sales from branch B , while for the home and lifestyle they had more sales in branch A, for health and beauty it had more sales from branch B, for food and beverages it had more sales in branch C , meanwhile for fashion and accessories it had more sales in branch C and lastly the electronic accessories had more sales in branch A.
+
+```{r}
+# grouped bar plot of Product.line vs Gender
+ggplot(dataset, 
+       aes(x = Product.line, 
+           fill = Gender)) + 
+  geom_bar(position = position_dodge(preserve = "single")) +
+  labs(title = "Grouped bar chart of Product.line vs Gender") +
+  coord_flip()
+```
+>From our barplot males purchased more electronic accessories, health and beauty and home and lifestyle. Females purchased more sports and travel products, food and beverages products and fashion accessories products.
+
+### Scatterplot
+
+```{r}
+# scatterplot of Rating vs. cogs
+ggplot(dataset, 
+       aes(x = Rating, 
+           y = cogs)) +
+  geom_point(color="cornflowerblue", 
+             size = 2, 
+             alpha=.8) +
+  scale_y_continuous(label = scales::dollar, 
+                     limits = c(10, 1050)) +
+  scale_x_continuous(breaks = seq(4,  10), 
+                     limits=c(4, 10)) + 
+  labs(x = "Rating",
+       y = "cogs",
+       title = "Scatter plot Rating vs. cogs")
+```
+
+> From our scatterplot cogs below 500 had the highest distribution at each product rating.
+
+```{r}
+# scatterplot of Tax vs. unit.price
+ggplot(dataset, 
+       aes(x = Tax, 
+           y = Unit.price)) +
+  geom_point(color="cornflowerblue", 
+             size = 2, 
+             alpha=.8) +
+  scale_y_continuous(label = scales::dollar, 
+                     limits = c(10, 100)) +
+  scale_x_continuous(breaks = seq(0,50, 10), 
+                     limits=c(0, 50)) +
+  labs(x = "Tax",
+       y = "Unit Price",
+       title = "Scatter plot of Tax vs. unit.price")
+```
+> From our scatter plot of Tax vs Unit price as the unit price increases so does the tax rate.
+
+
+```{r}
+# scatterplot of Gross income vs. Total
+ggplot(dataset, 
+       aes(x = gross.income, 
+           y = Total)) +
+  geom_point(color="cornflowerblue", 
+             size = 2, 
+             alpha=.8) +
+  scale_y_continuous(label = scales::dollar, 
+                     limits = c(10, 1050)) +
+  scale_x_continuous(breaks = seq(0,50, 10), 
+                     limits=c(0, 50)) +
+  labs(x = "gross income",
+       y = "Total",
+       title = "Scatterplot Gross income vs. Total")
+```
+> From our scatterplot there appears to be a linear relationship between the total and gross income in >that as the gross income increases so does the total.
+
+```{r}
+# Scatterplot of Quantity vs. cogs
+ggplot(dataset, 
+       aes(x = Quantity, 
+           y = cogs)) +
+  geom_point(color="cornflowerblue", 
+             size = 2, 
+             alpha=.8) +
+  scale_y_continuous(label = scales::dollar, 
+                     limits = c(10, 1000)) +
+  scale_x_continuous(breaks = seq(0, 10), 
+                     limits=c(1, 10)) +
+  labs(x = "Quantity",
+       y = "cogs",
+       title = "Scatterplot of Quantity vs. cogs")
+```
+> From our scatterplot as the quantity increases so does the values of the cost of goods sold increase.
+
+## Implementing the Solution
+### Principal Component Analysis
+```{r}
+library(Rtsne)
+library(Rcpp)
+
+# select the numerical columns exclude the categorical 
+df <- dataset[,c(6,8,12,14,16)]
+head(df)
+```
+
+```{r}
+# pass df to the prcomp()
+dataset.pca <- prcomp(df, center = TRUE, scale = TRUE)
+summary(dataset.pca)
+```
+> As a result of principal component we have obtained 5 principal components, each which explains percentage of the total variation of the dataset
+ PC1 explains 89% of the total variance, which means that nearly two-thirds 
+ of the information in the dataset can be encapsulated 
+ by just that one Principal Component. PC2 explains 10% of the variance. 
+
+
+```{r}
+# plot our pca.
+library(devtools)
+
+library(ggbiplot)
+ggbiplot(dataset.pca)
+```
+
+> From the graph we see that the variables Unit.price, cogs and gross income contribute to PC1, 
+ with higher values in those variables moving the samples to the right on the plot.
+
+
+
+

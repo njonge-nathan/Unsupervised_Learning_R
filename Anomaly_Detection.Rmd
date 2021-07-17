@@ -1,0 +1,176 @@
+---
+title: "Anomaly_Detection"
+author: "Nathan_Njonge"
+date: "7/17/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## PROBLEM DEFINITION
+
+You are a Data analyst at Carrefour Kenya and are currently undertaking a project that will inform the marketing department on the most relevant marketing strategies that will result in the highest no. of sales (total price including tax). Your project has been divided into four parts where you'll explore a recent marketing dataset by performing various unsupervised learning techniques and later providing recommendations based on your insights.
+
+```{r}
+# load our dataset
+df <- read.csv("http://bit.ly/CarreFourSalesDataset", header=TRUE)
+```
+
+
+```{r}
+# preview the top of our dataset
+head(df)
+```
+
+```{r}
+# preview the bottom of our dataset
+tail(df)
+```
+
+```{r}
+# view the dimensions of our dataset
+dim(df)
+```
+
+> Our dataset has 1000 rows and 2 columns
+
+```{r}
+# structure of our dataset
+str(df)
+```
+
+```{r}
+# convert Date data type 
+df$Date <- as.Date(df$Date , "%m/%d/%Y" )
+```
+
+
+```{r}
+# view the total missing values in the columns
+colSums(is.na(df))
+```
+
+> There are no missing values in our dataset.
+
+```{r}
+# find any duplicated rows in our dataset
+duplicated_rows <- df[duplicated(df),]
+duplicated_rows
+```
+
+> There are no duplicated rows in our dataset.
+
+# Handling Outliers
+
+```{r}
+# checking for outliers on the Sales column
+boxplot(df$Sales)
+boxplot.stats(df$Sales)$out
+```
+> The outliers in the sales column are as a result of the high amount of sales.
+
+# Exploratory Data Analysis
+## Univariate Analysis
+### 1.Measures of Central Tendency & Measures of Dispersion
+
+```{r}
+summary(df)
+```
+
+
+```{r}
+# confirm the data type
+str(df)
+```
+
+```{r}
+# mode function
+getmode <- function(v) {
+   uniqv <- unique(v)
+   uniqv[which.max(tabulate(match(v, uniqv)))]
+}
+```
+
+
+```{r}
+#  mode of numerical columns
+library(dplyr)
+df %>% summarize_if(is.numeric, getmode)
+```
+
+> The mode of sales is 829.08
+
+```{r}
+# range of Sales column
+df %>% summarize_if(is.numeric, range)
+```
+
+> The range of the Sales column is from 10.68 to 1042.65
+
+```{r}
+# Quantile of Sales column
+df %>% summarize_if(is.numeric, quantile)
+```
+
+```{r}
+# Variance of Sales column
+df %>% summarize_if(is.numeric, var)
+```
+
+> The variance of our sales column is 60,459.6
+
+```{r}
+# Standard Deviation of Sales column
+df %>% summarize_if(is.numeric, sd)
+```
+
+> The standard deviation of Sales column is 245.89
+
+### Univariate Graphical
+
+```{r}
+# histogram of sales distribution
+library(ggplot2)
+ggplot(df, aes(x = Sales)) +
+  geom_histogram(fill = "cornflowerblue", 
+                 color = "white",
+                 binwidth = 100) + 
+  labs(title="Histogram of Sales distribution",
+       x = "Sales")
+```
+>  histogram of sales frequency.
+
+
+## Solution implementation
+
+
+```{r}
+# devtools::install_github("business-science/tibbletime")
+library(tibbletime)
+df.tibble <- as_tibble(df)
+```
+
+
+```{r}
+library(tidyverse)
+library(anomalize)
+library(future)
+library(fracdiff)
+library(lmtest)
+library(tseries)
+library(Rcpp)
+
+df %>%
+  as_tibble() %>%
+  group_by(Date) %>%
+  summarise(Sales = mean(Sales)) %>%
+  time_decompose(Sales,method = "stl") %>%
+  anomalize(remainder) %>%
+  time_recompose() %>%
+  plot_anomalies(time_recomposed = TRUE, ncol = 3, alpha_dots = 0.5)
+```
+
+> There appears to be no anomalies in our dataset.
+

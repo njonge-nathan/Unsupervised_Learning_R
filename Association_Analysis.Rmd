@@ -1,0 +1,180 @@
+---
+title: "Association_Rules"
+author: "Nathan_Njonge"
+date: "7/17/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## PROBLEM DEFINITION
+
+You are a Data analyst at Carrefour Kenya and are currently undertaking a project that will inform the marketing department on the most relevant marketing strategies that will result in the highest no. of sales (total price including tax). Your project has been divided into four parts where you'll explore a recent marketing dataset by performing various unsupervised learning techniques and later providing recommendations based on your insights.
+
+```{r}
+# load our dataset
+df <- read.csv("http://bit.ly/SupermarketDatasetII")
+```
+
+```{r}
+# preview the top of our dataset
+head(df)
+```
+
+```{r}
+# preview the bottom of our dataset
+tail(df)
+```
+
+```{r}
+# view the dimensions of our dataset
+dim(df)
+```
+
+> Our dataset has 7500 rows and 20 columns.
+
+```{r}
+# summary of our dataset
+summary(df)
+```
+```{r}
+# check for missing values
+colSums(is.na(df))
+```
+
+> There appears to be missing values in the olive.oil column
+
+```{r}
+# omit missing values
+df2 <- subset(df, select=-c(olive.oil))
+colSums(is.na(df2))
+```
+```{r}
+# find any duplicated rows in our dataset
+duplicated_rows <- df2[duplicated(df2),]
+head(duplicated_rows)
+```
+
+> There is presence of duplicated rows in our dataset
+
+```{r}
+# dropping duplicated items
+unique_items <- df2[!duplicated(df2), ]
+# view the unique items
+head(unique_items)
+```
+
+## Implementing the Solution
+
+```{r}
+# loading the libraries
+library(arules)
+library(arulesViz)
+library(tidyverse)
+library(readxl)
+library(knitr)
+library(ggplot2)
+library(lubridate)
+library(plyr)
+library(dplyr)
+```
+
+
+```{r}
+# store this unique items into a csv
+write.csv(unique_items,"D:/IP_WEEK_14/analysis.csv", quote = FALSE, row.names = FALSE)
+```
+
+
+```{r}
+# convert our unique items into an object of the transaction class
+tr <- read.transactions("D:/IP_WEEK_14/analysis.csv", format = 'basket', sep=',')
+```
+
+```{r}
+# View the transaction object
+tr
+```
+
+```{r}
+# summary of the transaction object
+summary(tr)
+```
+
+
+```{r}
+# Create an item frequency plot for the top 20 items
+if (!require("RColorBrewer")) {
+# install color package of R
+install.packages("RColorBrewer")
+#include library RColorBrewer
+library(RColorBrewer)
+}
+itemFrequencyPlot(tr,topN=20,type="absolute",col=brewer.pal(8,'Pastel2'), main="Absolute Item Frequency Plot")
+```
+> Our absolute item frequency plot gives us the numeric frequencies of each item independently where mineral water appears to have had the highest frequency. 
+
+```{r}
+# item frequency plot for the top 20 items using relative type
+itemFrequencyPlot(tr,topN=20,type="relative",col=brewer.pal(8,'Pastel2'),main="Relative Item Frequency Plot")
+```
+> Our relative item frequency plot tells us how many times these items have appeared as compared to others, whereby mineral water has appeared more compared to the others. 
+
+## Generating Rules
+
+```{r}
+# Min Support as 0.001, confidence as 0.8.
+association.rules <- apriori(tr, parameter = list(supp=0.001, conf=0.8,maxlen=10))
+```
+
+
+```{r}
+inspect(association.rules[1:10])
+```
+
+> Using the above output we can be able to make our analysis. For example 100% of the customers who bought 'nonfat milk,turkey' also bought 'mineral water'.
+
+## Limiting the number and size of rules
+
+```{r}
+shorter.association.rules <- apriori(tr, parameter = list(supp=0.001, conf=0.8,maxlen=3))
+```
+
+## Removing redundant rules
+
+```{r}
+# remove rules that are subsets of larger rules
+
+# get subset rules in vector
+subset.rules <- which(colSums(is.subset(association.rules, association.rules)) > 1) 
+
+length(subset.rules)
+```
+
+```{r}
+# remove subset rules.
+subset.association.rules. <- association.rules[-subset.rules]
+```
+
+
+# Challenging the solution
+
+## Finding rules related to chocolate
+
+```{r}
+# find what customers buy before buying 'chocolate'
+chocolate.association.rules <- apriori(tr, parameter = list(supp=0.001, conf=0.8),appearance = list(default="lhs",rhs="chocolate"))
+```
+
+
+```{r}
+inspect(head(chocolate.association.rules))
+```
+
+> Above is the output of what people buy before buying chocolate.
+
+
+
+
